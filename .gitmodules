@@ -1,0 +1,4 @@
+[submodule "x-linux-gnss1-app"]
+	path = x-linux-gnss1-app
+	url = https://github.com/STMicroelectronics/x-linux-gnss1-app.git
+	ignore = dirty
