@@ -5,7 +5,7 @@ RUN apt update && apt upgrade -y && apt install -y --no-install-recommends --all
     xz-utils debianutils iputils-ping python3-git python3-jinja2 libegl1-mesa libsdl1.2-dev pylint xterm bsdmainutils \
     libssl-dev libgmp-dev libmpc-dev lz4 zstd
 RUN apt update && apt upgrade -y && apt install -y --no-install-recommends --allow-unauthenticated \
-    make file patch gcc flex bison bc
+    make file patch gcc flex bison bc kmod
 
 # create user "user" with password "pass"
 RUN useradd --create-home --shell /bin/bash --user-group --groups adm,sudo user
