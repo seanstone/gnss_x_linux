@@ -23,7 +23,7 @@ build.img:
 else
 
 # https://www.st.com/en/embedded-software/stm32mp1dev.html#st-get-software
-export SDK_DIR = build/stm32mp1-openstlinux-6.6-yocto-scarthgap-mpu-v24.11.06/sdk
+export SDK_DIR = /home/user/gnss_x_linux/build/stm32mp1-openstlinux-6.6-yocto-scarthgap-mpu-v24.11.06/sdk
 export ENV_SETUP = /home/user/gnss_x_linux/build/sdk/environment-setup-cortexa7t2hf-neon-vfpv4-ostl-linux-gnueabi
 
 .PHONY: sdk
@@ -37,7 +37,7 @@ sdk-install: $(SDK_DIR)
 	cd $(SDK_DIR) && ./st-image-weston-openstlinux-weston-stm32mp1.rootfs-aarch64-toolchain-5.0.3-openstlinux-6.6-yocto-scarthgap-mpu-v24.11.06.sh -y -d /home/user/gnss_x_linux/build/sdk
 
 # https://wiki.st.com/stm32mpu/wiki/Getting_started/STM32MP1_boards/STM32MP157x-DK2/Develop_on_Arm%C2%AE_Cortex%C2%AE-A7/Modify,_rebuild_and_reload_the_Linux%C2%AE_kernel
-export SOURCE_DIR = build/stm32mp1-openstlinux-6.6-yocto-scarthgap-mpu-v24.11.06/sources
+export SOURCE_DIR = /home/user/gnss_x_linux/build/stm32mp1-openstlinux-6.6-yocto-scarthgap-mpu-v24.11.06/sources
 export LINUX_DIR = $(SOURCE_DIR)/arm-ostl-linux-gnueabi/linux-stm32mp-6.6.48-stm32mp-r1-r0/linux-6.6.48
 export OUTPUT_BUILD_DIR = $(LINUX_DIR)/../build
 export IMAGE_KERNEL = uImage
@@ -64,17 +64,18 @@ $(OUTPUT_BUILD_DIR): $(LINUX_DIR)
 
 .PHONY: linux-defconfig
 linux-defconfig: #$(OUTPUT_BUILD_DIR)
-	source $(ENV_SETUP) && cd $(LINUX_DIR) && make O="../build" defconfig fragment*.config
-	source $(ENV_SETUP) && cd $(LINUX_DIR) && for f in `ls -1 ../fragment*.config`; do scripts/kconfig/merge_config.sh -m -r -O ../build ../build/.config $f; done
-	source $(ENV_SETUP) && cd $(LINUX_DIR) && (yes '' || true) | make oldconfig O="../build"
+	source $(ENV_SETUP) && cd $(LINUX_DIR) && make O="$(OUTPUT_BUILD_DIR)" defconfig fragment*.config
+	source $(ENV_SETUP) && cd $(LINUX_DIR) && for f in `ls -1 ../fragment*.config`; do scripts/kconfig/merge_config.sh -m -r -O $(OUTPUT_BUILD_DIR) $(OUTPUT_BUILD_DIR)/.config $f; done
+	source $(ENV_SETUP) && cd $(LINUX_DIR) && (yes '' || true) | make oldconfig O="$(OUTPUT_BUILD_DIR)"
 
 .PHONY: linux-menuconfig
 linux-menuconfig: #$(LINUX_DIR)
 	source $(ENV_SETUP) && cd $(LINUX_DIR) && make menuconfig
+	cp $(LINUX_DIR)/.config $(OUTPUT_BUILD_DIR)/.config
 
 .PHONY: linux-savedefconfig
 linux-savedefconfig: #$(LINUX_DIR)
-	source $(ENV_SETUP) && cd $(LINUX_DIR) && make savedefconfig
+	source $(ENV_SETUP) && cd $(LINUX_DIR) && make O="$(OUTPUT_BUILD_DIR)" savedefconfig
 
 .PHONY: linux-mrproper
 linux-mrproper: #$(LINUX_DIR)
@@ -82,17 +83,18 @@ linux-mrproper: #$(LINUX_DIR)
 
 .PHONY: linux-image
 linux-image: #$(OUTPUT_BUILD_DIR)
-	source $(ENV_SETUP) && cd $(LINUX_DIR) && make $(IMAGE_KERNEL) vmlinux dtbs LOADADDR=0xC2000040 O="../build"
+	rm $(LINUX_DIR)/.config
+	source $(ENV_SETUP) && cd $(LINUX_DIR) && make $(IMAGE_KERNEL) vmlinux dtbs LOADADDR=0xC2000040 O="$(OUTPUT_BUILD_DIR)"
 
 .PHONY: linux-modules
 linux-modules: #$(OUTPUT_BUILD_DIR)
-	source $(ENV_SETUP) && cd $(LINUX_DIR) && make modules O="${OUTPUT_BUILD_DIR}"
+	source $(ENV_SETUP) && cd $(LINUX_DIR) && make modules O="$(OUTPUT_BUILD_DIR)"
 
 .PHONY: linux-artifacts 
 linux-artifacts: $(OUTPUT_BUILD_DIR)
-	source $(ENV_SETUP) && cd $(LINUX_DIR) && make INSTALL_MOD_PATH="../build/install_artifact" modules_install O="../build"
-	source $(ENV_SETUP) && cd $(LINUX_DIR) && mkdir -p ../build/install_artifact/boot/
-	source $(ENV_SETUP) && cd $(LINUX_DIR) && cp ../build/arch/$${ARCH}/boot/$(IMAGE_KERNEL) ../build/install_artifact/boot/
-	source $(ENV_SETUP) && cd $(LINUX_DIR) && find ../build/arch/$${ARCH}/boot/dts/ -name 'st*.dtb' -exec cp '{}' ../build/install_artifact/boot/ \;
+	source $(ENV_SETUP) && cd $(LINUX_DIR) && make INSTALL_MOD_PATH="$(OUTPUT_BUILD_DIR)/install_artifact" modules_install O="$(OUTPUT_BUILD_DIR)"
+	source $(ENV_SETUP) && cd $(LINUX_DIR) && mkdir -p $(OUTPUT_BUILD_DIR)/install_artifact/boot/
+	source $(ENV_SETUP) && cd $(LINUX_DIR) && cp $(OUTPUT_BUILD_DIR)/arch/$${ARCH}/boot/$(IMAGE_KERNEL) $(OUTPUT_BUILD_DIR)/install_artifact/boot/
+	source $(ENV_SETUP) && cd $(LINUX_DIR) && find $(OUTPUT_BUILD_DIR)/arch/$${ARCH}/boot/dts/ -name 'st*.dtb' -exec cp '{}' $(OUTPUT_BUILD_DIR)/install_artifact/boot/ \;
 
 endif
