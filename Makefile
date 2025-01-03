@@ -53,30 +53,46 @@ $(LINUX_DIR): $(LINUX_DIR).tar.xz
 	cd $(SOURCE_DIR)/arm-ostl-linux-gnueabi/linux-stm32mp-6.6.48-stm32mp-r1-r0 && tar xvf linux-6.6.48.tar.xz
 	cd $(LINUX_DIR) && for p in `ls -1 ../*.patch`; do patch -p1 < $$p; done	
 
+.PHONY: output-build-dir
+output-build-dir:
+	echo $(OUTPUT_BUILD_DIR)
+
 .PHONY: linux-build-dir
 linux-build-dir: $(OUTPUT_BUILD_DIR)
 $(OUTPUT_BUILD_DIR): $(LINUX_DIR)
 	mkdir -p $(OUTPUT_BUILD_DIR)
 
 .PHONY: linux-defconfig
-linux-defconfig: $(OUTPUT_BUILD_DIR)
-	source $(ENV_SETUP) && cd $(LINUX_DIR) && make O="$(OUTPUT_BUILD_DIR)" defconfig fragment*.config
-	source $(ENV_SETUP) && cd $(LINUX_DIR) && for f in `ls -1 ../fragment*.config`; do scripts/kconfig/merge_config.sh -m -r -O $(OUTPUT_BUILD_DIR) $(OUTPUT_BUILD_DIR)/.config $f; done
-	source $(ENV_SETUP) && cd $(LINUX_DIR) && (yes '' || true) | make oldconfig O="$(OUTPUT_BUILD_DIR)"
+linux-defconfig: #$(OUTPUT_BUILD_DIR)
+	source $(ENV_SETUP) && cd $(LINUX_DIR) && make O="../build" defconfig fragment*.config
+	source $(ENV_SETUP) && cd $(LINUX_DIR) && for f in `ls -1 ../fragment*.config`; do scripts/kconfig/merge_config.sh -m -r -O ../build ../build/.config $f; done
+	source $(ENV_SETUP) && cd $(LINUX_DIR) && (yes '' || true) | make oldconfig O="../build"
+
+.PHONY: linux-menuconfig
+linux-menuconfig: #$(LINUX_DIR)
+	source $(ENV_SETUP) && cd $(LINUX_DIR) && make menuconfig
+
+.PHONY: linux-savedefconfig
+linux-savedefconfig: #$(LINUX_DIR)
+	source $(ENV_SETUP) && cd $(LINUX_DIR) && make savedefconfig
+
+.PHONY: linux-mrproper
+linux-mrproper: #$(LINUX_DIR)
+	source $(ENV_SETUP) && cd $(LINUX_DIR) && make mrproper
 
 .PHONY: linux-image
-linux-image: $(OUTPUT_BUILD_DIR)
-	source $(ENV_SETUP) && cd $(LINUX_DIR) && make $(IMAGE_KERNEL) vmlinux dtbs LOADADDR=0xC2000040 O="$(OUTPUT_BUILD_DIR)"
+linux-image: #$(OUTPUT_BUILD_DIR)
+	source $(ENV_SETUP) && cd $(LINUX_DIR) && make $(IMAGE_KERNEL) vmlinux dtbs LOADADDR=0xC2000040 O="../build"
 
 .PHONY: linux-modules
-linux-modules: $(OUTPUT_BUILD_DIR)
+linux-modules: #$(OUTPUT_BUILD_DIR)
 	source $(ENV_SETUP) && cd $(LINUX_DIR) && make modules O="${OUTPUT_BUILD_DIR}"
 
 .PHONY: linux-artifacts 
 linux-artifacts: $(OUTPUT_BUILD_DIR)
-	source $(ENV_SETUP) && cd $(LINUX_DIR) && make INSTALL_MOD_PATH="$(OUTPUT_BUILD_DIR)/install_artifact" modules_install O="$(OUTPUT_BUILD_DIR)"
-	source $(ENV_SETUP) && cd $(LINUX_DIR) && mkdir -p $(OUTPUT_BUILD_DIR)/install_artifact/boot/
-	source $(ENV_SETUP) && cd $(LINUX_DIR) && cp $(OUTPUT_BUILD_DIR)/arch/$${ARCH}/boot/$(IMAGE_KERNEL) $(OUTPUT_BUILD_DIR)/install_artifact/boot/
-	source $(ENV_SETUP) && cd $(LINUX_DIR) && find $(OUTPUT_BUILD_DIR)/arch/$${ARCH}/boot/dts/ -name 'st*.dtb' -exec cp '{}' $(OUTPUT_BUILD_DIR)/install_artifact/boot/ \;
+	source $(ENV_SETUP) && cd $(LINUX_DIR) && make INSTALL_MOD_PATH="../build/install_artifact" modules_install O="../build"
+	source $(ENV_SETUP) && cd $(LINUX_DIR) && mkdir -p ../build/install_artifact/boot/
+	source $(ENV_SETUP) && cd $(LINUX_DIR) && cp ../build/arch/$${ARCH}/boot/$(IMAGE_KERNEL) ../build/install_artifact/boot/
+	source $(ENV_SETUP) && cd $(LINUX_DIR) && find ../build/arch/$${ARCH}/boot/dts/ -name 'st*.dtb' -exec cp '{}' ../build/install_artifact/boot/ \;
 
 endif
