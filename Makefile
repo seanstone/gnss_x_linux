@@ -68,4 +68,15 @@ linux-defconfig: $(OUTPUT_BUILD_DIR)
 linux-image: $(OUTPUT_BUILD_DIR)
 	source $(ENV_SETUP) && cd $(LINUX_DIR) && make $(IMAGE_KERNEL) vmlinux dtbs LOADADDR=0xC2000040 O="$(OUTPUT_BUILD_DIR)"
 
+.PHONY: linux-modules
+linux-modules: $(OUTPUT_BUILD_DIR)
+	source $(ENV_SETUP) && cd $(LINUX_DIR) && make modules O="${OUTPUT_BUILD_DIR}"
+
+.PHONY: linux-artifacts 
+linux-artifacts: $(OUTPUT_BUILD_DIR)
+	source $(ENV_SETUP) && cd $(LINUX_DIR) && make INSTALL_MOD_PATH="$(OUTPUT_BUILD_DIR)/install_artifact" modules_install O="$(OUTPUT_BUILD_DIR)"
+	source $(ENV_SETUP) && cd $(LINUX_DIR) && mkdir -p $(OUTPUT_BUILD_DIR)/install_artifact/boot/
+	source $(ENV_SETUP) && cd $(LINUX_DIR) && cp $(OUTPUT_BUILD_DIR)/arch/$${ARCH}/boot/$(IMAGE_KERNEL) $(OUTPUT_BUILD_DIR)/install_artifact/boot/
+	source $(ENV_SETUP) && cd $(LINUX_DIR) && find $(OUTPUT_BUILD_DIR)/arch/$${ARCH}/boot/dts/ -name 'st*.dtb' -exec cp '{}' $(OUTPUT_BUILD_DIR)/install_artifact/boot/ \;
+
 endif
