@@ -83,7 +83,7 @@ linux-mrproper: #$(LINUX_DIR)
 
 .PHONY: linux-image
 linux-image: #$(OUTPUT_BUILD_DIR)
-	rm $(LINUX_DIR)/.config
+	rm -f $(LINUX_DIR)/.config
 	source $(ENV_SETUP) && cd $(LINUX_DIR) && make $(IMAGE_KERNEL) vmlinux dtbs LOADADDR=0xC2000040 O="$(OUTPUT_BUILD_DIR)"
 
 .PHONY: linux-modules
